@@ -17,7 +17,6 @@
 
 #include "AreaDefines.h"
 #include "Battleground.h"
-#include "CreatureScript.h"
 #include "ObjectMgr.h"
 #include "Pet.h"
 #include "Player.h"
@@ -215,25 +214,9 @@ enum UnstablePower
     SPELL_UNSTABLE_POWER_AURA = 24659
 };
 
-enum CommendationOfKaelthas
-{
-    SPELL_COMMENDATION_OF_KAELTHAS = 45480
-};
-
-enum CorpseTongueCoin
-{
-    SPELL_CORPSE_TONGUE_COIN        = 71633,
-    SPELL_CORPSE_TONGUE_COIN_HERO   = 71634
-};
-
 enum CrystalSpireOfKarabor
 {
     SPELL_CRYSTAL_SPIRE_OF_KARABOR_MANA = 35476
-};
-
-enum SoulHarvestersCharm
-{
-    SPELL_SOUL_HARVESTERS_CHARM     = 60513
 };
 
 enum SunwellExaltedNeck
@@ -259,12 +242,6 @@ enum TinyAbominationInAJar
 enum TotemOfFlowingWater
 {
     SPELL_TOTEM_OF_FLOWING_WATER_MANA = 28857
-};
-
-enum PetrifiedTwilightScale
-{
-    SPELL_PETRIFIED_TWILIGHT_SCALE_HC = 75480,
-    SPELL_PETRIFIED_TWILIGHT_SCALE    = 75477
 };
 
 enum ShardOfTheScale
@@ -655,22 +632,10 @@ class spell_item_lil_phylactery : public AuraScript
     }
 };
 
+// 45042 - Power Circle (Shifting Naaru Sliver base aura)
 class spell_item_shifting_naaru_silver : public AuraScript
 {
     PrepareAuraScript(spell_item_shifting_naaru_silver);
-
-    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        if (GetTarget() == GetCaster())
-            if (Aura* aur = GetTarget()->AddAura(45044 /*Limitless Power*/, GetTarget()))
-                aur->SetDuration(GetDuration());
-    }
-
-    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        if (Aura* aur = GetTarget()->GetAura(45044 /*Limitless Power*/, GetTarget()->GetGUID()))
-            aur->SetDuration(0);
-    }
 
     void OnBaseRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
@@ -679,13 +644,7 @@ class spell_item_shifting_naaru_silver : public AuraScript
 
     void Register() override
     {
-        if (m_scriptSpellId == 45043)
-        {
-            OnEffectApply += AuraEffectApplyFn(spell_item_shifting_naaru_silver::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            AfterEffectRemove += AuraEffectRemoveFn(spell_item_shifting_naaru_silver::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        }
-        else
-            AfterEffectRemove += AuraEffectRemoveFn(spell_item_shifting_naaru_silver::OnBaseRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_item_shifting_naaru_silver::OnBaseRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -3583,6 +3542,24 @@ class spell_item_rocket_boots : public SpellScript
     }
 };
 
+// 55001 - Flexweave Underlay (Parachute)
+class spell_item_flexweave_underlay : public SpellScript
+{
+    PrepareSpellScript(spell_item_flexweave_underlay);
+
+    SpellCastResult CheckCast()
+    {
+        if (GetCaster()->IsFlying() || GetCaster()->IsFalling())
+            return SPELL_CAST_OK;
+        return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_item_flexweave_underlay::CheckCast);
+    }
+};
+
 class spell_item_healing_injector : public SpellScript
 {
     PrepareSpellScript(spell_item_healing_injector);
@@ -4373,7 +4350,7 @@ class spell_item_luffa : public SpellScript
             for (Unit::AuraApplicationMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
             {
                 Aura const* aura = itr->second->GetBase();
-                if (!(aura->GetSpellInfo()->GetAllEffectsMechanicMask() & (1 << MECHANIC_BLEED)) || aura->GetCasterLevel() > 60 || aura->GetSpellInfo()->IsPositive())
+                if (!(aura->GetSpellInfo()->GetAllEffectsMechanicMask() & (1ULL << MECHANIC_BLEED)) || aura->GetCasterLevel() > 60 || aura->GetSpellInfo()->IsPositive())
                     continue;
 
                 return SPELL_CAST_OK;
@@ -4393,7 +4370,7 @@ class spell_item_luffa : public SpellScript
             for (Unit::AuraApplicationMap::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
             {
                 Aura const* aura = itr->second->GetBase();
-                if (!(aura->GetSpellInfo()->GetAllEffectsMechanicMask() & (1 << MECHANIC_BLEED)) || aura->GetCasterLevel() > 60 || aura->GetSpellInfo()->IsPositive())
+                if (!(aura->GetSpellInfo()->GetAllEffectsMechanicMask() & (1ULL << MECHANIC_BLEED)) || aura->GetCasterLevel() > 60 || aura->GetSpellInfo()->IsPositive())
                     continue;
 
                 player->RemoveAurasDueToSpell(aura->GetId(), aura->GetCasterGUID());
@@ -4879,7 +4856,7 @@ class spell_item_ultrasafe_transporter : public SpellScript
     }
 };
 
-// 45043 - Power Circle (Mage T5 Set Bonus)
+// 45043 - Power Circle (Shifting Naaru Sliver)
 class spell_item_power_circle : public AuraScript
 {
     PrepareAuraScript(spell_item_power_circle);
@@ -4889,23 +4866,28 @@ class spell_item_power_circle : public AuraScript
         return ValidateSpellInfo({ SPELL_LIMITLESS_POWER });
     }
 
-    void OnAuraInit()
+    bool CheckCaster(Unit* target)
     {
-        Unit* caster = GetCaster();
-        if (!caster)
-            return;
-
-        caster->CastSpell(caster, SPELL_LIMITLESS_POWER, true);
+        return target->GetGUID() == GetCasterGUID();
     }
 
-    void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        GetTarget()->CastSpell(GetTarget(), SPELL_LIMITLESS_POWER, true);
+        if (Aura* buff = GetTarget()->GetAura(SPELL_LIMITLESS_POWER))
+            buff->SetDuration(GetDuration());
+    }
+
+    void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         GetTarget()->RemoveAurasDueToSpell(SPELL_LIMITLESS_POWER);
     }
 
     void Register() override
     {
-        AfterEffectRemove += AuraEffectRemoveFn(spell_item_power_circle::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        DoCheckAreaTarget += AuraCheckAreaTargetFn(spell_item_power_circle::CheckCaster);
+        AfterEffectApply += AuraEffectApplyFn(spell_item_power_circle::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_item_power_circle::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -5702,67 +5684,30 @@ class spell_item_unstable_power : public AuraScript
     }
 };
 
-// 45478 - Commendation of Kael'thas
-class spell_item_commendation_of_kaelthas : public AuraScript
+// 45057 - Evasive Maneuvers (Commendation of Kael'thas)
+// 52420 - Deflection (Soul Harvester's Charm)
+// 71634 - Item - Icecrown 25 Normal Tank Trinket 1 (Corpse Tongue Coin)
+// 71640 - Item - Icecrown 25 Heroic Tank Trinket 1 (Corpse Tongue Coin (Heroic))
+// 75475 - Item - Chamber of Aspects 25 Tank Trinket (Petrified Twilight Scale)
+// 75481 - Item - Chamber of Aspects 25 Heroic Tank Trinket (Petrified Twilight Scale (Heroic))
+// Trinkets that proc only when a melee hit drops you below EFFECT_0 % HP.
+class spell_item_proc_below_pct_damaged : public AuraScript
 {
-    PrepareAuraScript(spell_item_commendation_of_kaelthas);
+    PrepareAuraScript(spell_item_proc_below_pct_damaged);
 
     bool CheckProc(ProcEventInfo& eventInfo)
     {
-        if (HealInfo* healInfo = eventInfo.GetHealInfo())
-            if (Unit* target = healInfo->GetTarget())
-                if (target->GetHealth() + healInfo->GetEffectiveHeal() >= target->GetMaxHealth())
-                    return true;
-        return false;
+        DamageInfo* damageInfo = eventInfo.GetDamageInfo();
+        if (!damageInfo || !damageInfo->GetDamage())
+            return false;
+
+        int32 pct = GetSpellInfo()->Effects[EFFECT_0].CalcValue();
+        return eventInfo.GetActionTarget()->HealthBelowPctDamaged(pct, damageInfo->GetDamage());
     }
 
     void Register() override
     {
-        DoCheckProc += AuraCheckProcFn(spell_item_commendation_of_kaelthas::CheckProc);
-    }
-};
-
-// 71632 - Corpse Tongue Coin
-class spell_item_corpse_tongue_coin : public AuraScript
-{
-    PrepareAuraScript(spell_item_corpse_tongue_coin);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_CORPSE_TONGUE_COIN });
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        PreventDefaultAction();
-        eventInfo.GetActor()->CastSpell((Unit*)nullptr, SPELL_CORPSE_TONGUE_COIN, true, nullptr, GetEffect(EFFECT_0));
-    }
-
-    void Register() override
-    {
-        OnProc += AuraProcFn(spell_item_corpse_tongue_coin::HandleProc);
-    }
-};
-
-// 71639 - Corpse Tongue Coin (Heroic)
-class spell_item_corpse_tongue_coin_heroic : public AuraScript
-{
-    PrepareAuraScript(spell_item_corpse_tongue_coin_heroic);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_CORPSE_TONGUE_COIN_HERO });
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        PreventDefaultAction();
-        eventInfo.GetActor()->CastSpell((Unit*)nullptr, SPELL_CORPSE_TONGUE_COIN_HERO, true, nullptr, GetEffect(EFFECT_0));
-    }
-
-    void Register() override
-    {
-        OnProc += AuraProcFn(spell_item_corpse_tongue_coin_heroic::HandleProc);
+        DoCheckProc += AuraCheckProcFn(spell_item_proc_below_pct_damaged::CheckProc);
     }
 };
 
@@ -5781,28 +5726,6 @@ class spell_item_crystal_spire_of_karabor : public AuraScript
     void Register() override
     {
         DoCheckProc += AuraCheckProcFn(spell_item_crystal_spire_of_karabor::CheckProc);
-    }
-};
-
-// 60512 - Soul Harvester's Charm
-class spell_item_soul_harvesters_charm : public AuraScript
-{
-    PrepareAuraScript(spell_item_soul_harvesters_charm);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_SOUL_HARVESTERS_CHARM });
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        PreventDefaultAction();
-        eventInfo.GetActor()->CastSpell((Unit*)nullptr, SPELL_SOUL_HARVESTERS_CHARM, true, nullptr, GetEffect(EFFECT_0));
-    }
-
-    void Register() override
-    {
-        OnProc += AuraProcFn(spell_item_soul_harvesters_charm::HandleProc);
     }
 };
 
@@ -6018,50 +5941,6 @@ class spell_item_totem_of_flowing_water : public AuraScript
     void Register() override
     {
         OnEffectProc += AuraEffectProcFn(spell_item_totem_of_flowing_water::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
-    }
-};
-
-// 75466 - Petrified Twilight Scale
-class spell_item_petrified_twilight_scale : public AuraScript
-{
-    PrepareAuraScript(spell_item_petrified_twilight_scale);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_PETRIFIED_TWILIGHT_SCALE });
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        PreventDefaultAction();
-        eventInfo.GetActionTarget()->CastSpell((Unit*)nullptr, SPELL_PETRIFIED_TWILIGHT_SCALE, true, nullptr, GetEffect(EFFECT_0));
-    }
-
-    void Register() override
-    {
-        OnProc += AuraProcFn(spell_item_petrified_twilight_scale::HandleProc);
-    }
-};
-
-// 75473 - Petrified Twilight Scale (Heroic)
-class spell_item_petrified_twilight_scale_heroic : public AuraScript
-{
-    PrepareAuraScript(spell_item_petrified_twilight_scale_heroic);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_PETRIFIED_TWILIGHT_SCALE_HC });
-    }
-
-    void HandleProc(ProcEventInfo& eventInfo)
-    {
-        PreventDefaultAction();
-        eventInfo.GetActionTarget()->CastSpell((Unit*)nullptr, SPELL_PETRIFIED_TWILIGHT_SCALE_HC, true, nullptr, GetEffect(EFFECT_0));
-    }
-
-    void Register() override
-    {
-        OnProc += AuraProcFn(spell_item_petrified_twilight_scale_heroic::HandleProc);
     }
 };
 
@@ -6340,6 +6219,7 @@ void AddSC_item_spell_scripts()
     RegisterSpellScript(spell_item_deathbringers_will_normal);
     RegisterSpellScript(spell_item_deathbringers_will_heroic);
     RegisterSpellScript(spell_item_discerning_eye_beast_dummy);
+    RegisterSpellScript(spell_item_flexweave_underlay);
     RegisterSpellScript(spell_item_frozen_shadoweave);
     RegisterSpellScript(spell_item_healing_touch_refund);
     RegisterSpellScript(spell_item_heartpierce);
@@ -6350,11 +6230,8 @@ void AddSC_item_spell_scripts()
     RegisterSpellScript(spell_item_pet_healing);
     RegisterSpellScript(spell_item_restless_strength);
     RegisterSpellScript(spell_item_unstable_power);
-    RegisterSpellScript(spell_item_commendation_of_kaelthas);
-    RegisterSpellScript(spell_item_corpse_tongue_coin);
-    RegisterSpellScript(spell_item_corpse_tongue_coin_heroic);
+    RegisterSpellScript(spell_item_proc_below_pct_damaged);
     RegisterSpellScript(spell_item_crystal_spire_of_karabor);
-    RegisterSpellScript(spell_item_soul_harvesters_charm);
     RegisterSpellScript(spell_item_sunwell_exalted_caster_neck);
     RegisterSpellScript(spell_item_sunwell_exalted_healer_neck);
     RegisterSpellScript(spell_item_sunwell_exalted_melee_neck);
@@ -6363,8 +6240,6 @@ void AddSC_item_spell_scripts()
     RegisterSpellScript(spell_item_tiny_abomination_in_a_jar);
     RegisterSpellScript(spell_item_tiny_abomination_in_a_jar_hero);
     RegisterSpellScript(spell_item_totem_of_flowing_water);
-    RegisterSpellScript(spell_item_petrified_twilight_scale);
-    RegisterSpellScript(spell_item_petrified_twilight_scale_heroic);
     RegisterSpellScript(spell_item_purified_shard_of_the_scale);
     RegisterSpellScript(spell_item_shiny_shard_of_the_scale);
     RegisterSpellScript(spell_item_living_root_of_the_wildheart);
