@@ -50,6 +50,7 @@ enum PlayerHook
     PLAYERHOOK_ON_AFTER_UPDATE,
     PLAYERHOOK_ON_MONEY_CHANGED,
     PLAYERHOOK_ON_BEFORE_LOOT_MONEY,
+    PLAYERHOOK_ON_BEFORE_SEND_LOOT,
     PLAYERHOOK_ON_GIVE_EXP,
     PLAYERHOOK_ON_REPUTATION_CHANGE,
     PLAYERHOOK_ON_REPUTATION_RANK_CHANGE,
@@ -212,6 +213,7 @@ enum PlayerHook
     PLAYERHOOK_ON_CAN_UPDATE_SKILL,
     PLAYERHOOK_ON_BEFORE_UPDATE_SKILL,
     PLAYERHOOK_ON_UPDATE_SKILL,
+    PLAYERHOOK_ON_SET_SKILL,
     PLAYERHOOK_CAN_RESURRECT,
     PLAYERHOOK_ON_CAN_GIVE_LEVEL,
     PLAYERHOOK_ON_SEND_LIST_INVENTORY,
@@ -225,7 +227,7 @@ enum PlayerHook
 class PlayerScript : public ScriptObject
 {
 protected:
-    PlayerScript(const char* name, std::vector<uint16> enabledHooks = std::vector<uint16>());
+    PlayerScript(char const* name, std::vector<uint16> enabledHooks = std::vector<uint16>());
 
 public:
     // Called when a player dies
@@ -286,6 +288,9 @@ public:
 
     // Called before looted money is added to a player
     virtual void OnPlayerBeforeLootMoney(Player* /*player*/, Loot* /*loot*/) {}
+
+    // Called before loot is sent to a player
+    virtual void OnPlayerBeforeSendLoot(Player* /*player*/, ObjectGuid /*lootGuid*/, Loot* /*loot*/) { }
 
     // Called when a player gains XP (before anything is given)
     virtual void OnPlayerGiveXP(Player* /*player*/, uint32& /*amount*/, Unit* /*victim*/, uint8 /*xpSource*/) { }
@@ -398,7 +403,7 @@ public:
     virtual void OnPlayerGossipSelect(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/) { }
 
     // Called when a player selects an option in a player gossip window
-    virtual void OnPlayerGossipSelectCode(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/, const char* /*code*/) { }
+    virtual void OnPlayerGossipSelectCode(Player* /*player*/, uint32 /*menu_id*/, uint32 /*sender*/, uint32 /*action*/, char const* /*code*/) { }
 
     // On player getting charmed
     virtual void OnPlayerBeingCharmed(Player* /*player*/, Unit* /*charmer*/, uint32 /*oldFactionId*/, uint32 /*newFactionId*/) { }
@@ -616,7 +621,7 @@ public:
 
     [[nodiscard]] virtual bool OnPlayerNotSetArenaTeamInfoField(Player* /*player*/, uint8 /*slot*/, ArenaTeamInfoType /*type*/, uint32 /*value*/) { return true; } // Whats that?
 
-    [[nodiscard]] virtual bool OnPlayerCanJoinLfg(Player* /*player*/, uint8 /*roles*/, std::set<uint32>& /*dungeons*/, const std::string& /*comment*/) { return true; }
+    [[nodiscard]] virtual bool OnPlayerCanJoinLfg(Player* /*player*/, uint8 /*roles*/, std::set<uint32>& /*dungeons*/, std::string const& /*comment*/) { return true; }
 
     [[nodiscard]] virtual bool OnPlayerCanEnterMap(Player* /*player*/, MapEntry const* /*entry*/, InstanceTemplate const* /*instance*/, MapDifficulty const* /*mapDiff*/, bool /*loginCheck*/) { return true; }
 
@@ -792,6 +797,7 @@ public:
     virtual bool OnPlayerCanUpdateSkill(Player* /*player*/, uint32 /*skillId*/) { return true; }
     virtual void OnPlayerBeforeUpdateSkill(Player* /*player*/, uint32 /*skillId*/, uint32& /*value*/, uint32 /*max*/, uint32 /*step*/) { }
     virtual void OnPlayerUpdateSkill(Player* /*player*/, uint32 /*skillId*/, uint32 /*value*/, uint32 /*max*/, uint32 /*step*/, uint32 /*newValue*/) { }
+    virtual void OnPlayerSetSkill(Player* /*player*/, uint32 /*skillId*/, uint32 /*value*/, uint32 /*max*/, uint32 /*step*/, uint32 /*newValue*/) { }
 
     /**
      * @brief This hook is called, to avoid player resurrect
